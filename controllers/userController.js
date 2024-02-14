@@ -1,11 +1,13 @@
 // const { ObjectId } = require('mongoose').Types;
-const { User , Thought } = require('../models');
+const { User, Thought } = require("../models");
 
 module.exports = {
   // Get all users
   async getUsers(req, res) {
     try {
-      const users = await User.find();
+      const users = await User.find()
+      .populate("thoughts")
+      .populate("friends");
 
       res.json(users);
     } catch (err) {
@@ -17,19 +19,15 @@ module.exports = {
   async getSingleUser(req, res) {
     try {
       const user = await User.findOne({ _id: req.params.userId })
-        .select('-__v')
-        .populate('thoughts')
-        .populate('friends');
+        .select("-__v")
+        .populate("thoughts")
+        .populate("friends");
 
       if (!user) {
-        return res.status(404).json({ message: 'No user with that ID' })
+        return res.status(404).json({ message: "No user with that ID" });
       }
 
-      res.json({
-        user,
-        thoughts: user.thoughts,
-        friends: user.friends,
-      });
+      res.json(user);
     } catch (err) {
       console.log(err);
       return res.status(500).json(err);
@@ -44,54 +42,65 @@ module.exports = {
       res.status(500).json(err);
     }
   },
-  // Delete a user and remove thought
+  // Delete a user and remove thoughts
   async deleteUser(req, res) {
     try {
-      const user = await User.findOneAndRemove({ _id: req.params.userId });
+      const deletedUser = await User.findOneAndRemove({
+        _id: req.params.userId,
+      });
 
-      if (!user) {
-        return res.status(404).json({ message: 'No such user exists' });
+      if (!deletedUser) {
+        return res.status(404).json({ message: "No such user exists" });
       }
 
-      const thought = await Thought.findOneAndUpdate(
-        { users: req.params.userId },
-        { $pull: { users: req.params.userId } },
-        { new: true }
+      // Remove thoughts associated with the deleted user
+      const deletedThoughts = await Thought.deleteMany({
+        _id: { $in: deletedUser.thoughts },
+      });
+
+      // Remove user from other users' friend lists
+      await User.updateMany(
+        { friends: req.params.userId },
+        { $pull: { friends: req.params.userId } }
       );
 
-      if (!thought) {
-        return res.status(404).json({
-          message: 'User deleted, but no thoughts found',
-        });
-      }
-
-      res.json({ message: 'User successfully deleted' });
+      res.json({
+        message:
+          "User successfully deleted with their thoughts and removed from friends lists",
+        deletedUser,
+        deletedThoughts,
+      });
     } catch (err) {
       console.log(err);
       res.status(500).json(err);
     }
   },
 
-  // Update a user 
+  // Update a user
   async updateUser(req, res) {
     try {
-      const user = await User.findOneAndUpdate({ _id: req.params.userId },
-        req.body, { new: true, runValidators: true });
-       
-        console.log('Update User', user);
+      const user = await User.findOneAndUpdate(
+        { _id: req.params.userId },
+        req.body,
+        { new: true, runValidators: true }
+      );
+
+      console.log("Update User", user);
 
       if (!user) {
-        return res.status(404).json({ message: 'No such user exists' });
+        return res.status(404).json({ message: "No such user exists" });
       }
 
-      res.json({ message: 'User successfully updated' });
+      res.json({ message: "User successfully updated" });
     } catch (err) {
       console.log(err);
 
-        // validation errors
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ message: 'Validation error', errors: err.errors });
-    }
+      // validation errors
+      if (err.name === "ValidationError") {
+        return res
+          .status(400)
+          .json({ message: "Validation error", errors: err.errors });
+      }
 
       res.status(500).json(err);
     }
@@ -99,8 +108,8 @@ module.exports = {
 
   // Add a friend to a user
   async addFriend(req, res) {
-    console.log('You are adding a friend');
-    console.log('Request Body:', req.body);
+    console.log("You are adding a friend");
+    console.log("Request Body:", req.body);
 
     try {
       const { friend } = req.body;
@@ -113,7 +122,7 @@ module.exports = {
       if (!user) {
         return res
           .status(404)
-          .json({ message: 'No user found with that ID :(' });
+          .json({ message: "No user found with that ID :(" });
       }
 
       res.json(user);
@@ -124,18 +133,18 @@ module.exports = {
 
   // Remove friend from a user
   async removeFriend(req, res) {
-    console.log("DELETE", req.params)
+    console.log("DELETE", req.params);
     try {
       const user = await User.findOneAndUpdate(
         { _id: req.params.userId },
-        { $pull: { friends: { _id: req.params.friendId } } },
+        { $pull: { friends: req.params.friendId } },
         { runValidators: true, new: true }
       );
-        console.log(user)
+      console.log(user);
       if (!user) {
         return res
           .status(404)
-          .json({ message: 'No user found with that ID :(' });
+          .json({ message: "No user found with that ID :(" });
       }
 
       res.json(user);
@@ -144,52 +153,3 @@ module.exports = {
     }
   },
 };
-
-// Probably remove the below
-  // Add a thought to a user
-  // async addThought(req, res) {
-  //   console.log('You are adding a thought');
-  //   console.log(req.body);
-
-  //   try {
-  //     const user = await User.findOneAndUpdate(
-  //       { _id: req.params.userId },
-  //       { $addToSet: { thoughts: req.body } },
-  //       { runValidators: true, new: true }
-  //     );
-
-  //     if (!user) {
-  //       return res
-  //         .status(404)
-  //         .json({ message: 'No user found with that ID :(' });
-  //     }
-
-  //     res.json(user);
-  //   } catch (err) {
-  //     res.status(500).json(err);
-  //   }
-  // },
-  // // Remove thought from a user
-  // async removeThought(req, res) {
-  //   console.log("DELETE", req.params)
-  //   try {
-  //     const user = await User.findOneAndUpdate(
-  //       { _id: req.params.userId },
-  //       { $pull: { thoughts: { _id: req.params.thoughtId } } },
-  //       { runValidators: true, new: true }
-  //     );
-  //       console.log(user)
-  //     if (!user) {
-  //       return res
-  //         .status(404)
-  //         .json({ message: 'No user found with that ID :(' });
-  //     }
-
-  //     res.json(user);
-  //   } catch (err) {
-  //     res.status(500).json(err);
-  //   }
-  // },
-
-
-

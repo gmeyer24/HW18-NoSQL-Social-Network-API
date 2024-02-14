@@ -69,16 +69,12 @@ module.exports = {
 
     // Remove the thought from the user's thoughts array
     const user = await User.findOneAndUpdate(
-      { _id: req.params.userId },
+      { _id: req.body.userId },
       { $pull: { thoughts: req.params.thoughtId } },
       { runValidators: true, new: true }
     );
 
-    if (!user) {
-      return res.status(404).json({ message: 'No user found with that ID :(' });
-    }
-
-      res.json({ message: 'Thought and associated user thoughts deleted!' });
+      res.json({ message: 'Thought deleted.' });
     } catch (err) {
       res.status(500).json(err);
     }

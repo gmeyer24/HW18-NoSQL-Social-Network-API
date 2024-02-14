@@ -1,4 +1,5 @@
 const { User , Thought } = require('../models');
+const reactionSchema = require('../models/Reaction');
 
 module.exports = {
   // Get all thoughts
@@ -49,7 +50,7 @@ module.exports = {
       if (!user) {
         return res
           .status(404)
-          .json({ message: 'No user found with that ID :(' });
+          .json({ message: 'No user found with that ID' });
       }
 
       res.json(user);
@@ -105,19 +106,26 @@ module.exports = {
     console.log(req.body);
 
     try {
-      const thought = await Thought.findOneAndUpdate(
-        { _id: req.params.thoughtId },
-        { $addToSet: { reactions: req.body } },
-        { runValidators: true, new: true }
-      );
+      const { reactionBody, username, userId } = req.body;
 
-      if (!thought) {
-        return res
-          .status(404)
-          .json({ message: 'No thought found with that ID :(' });
+      if (!reactionBody || !username || !userId ) {
+        return res.status(400).json({ message: 'Invalid request. Please provide reactionBody, username, and userId.' });
       }
 
-      res.json(thought);
+      const newReaction = await Thought.findOneAndUpdate(
+        { _id: req.params.thoughtId  },
+        { $addToSet: { reactions: req.body } },
+      { runValidators: true, new: true }
+        );
+      console.log('New Reaction:', newReaction);
+
+      if (!newReaction) {
+        return res
+          .status(404)
+          .json({ message: 'No thought found with that ID.'});
+      }
+
+      res.json(newReaction);
     } catch (err) {
       res.status(500).json(err);
     }

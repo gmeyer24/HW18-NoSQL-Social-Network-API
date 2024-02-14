@@ -36,6 +36,18 @@ thoughtSchema.virtual('reactionCount').get(function () {
   return this.reactions.length;
 });
 
+thoughtSchema.virtual('formattedCreatedAt').get(function () {
+  const options = {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  };
+  return this.createdAt.toLocaleString('en-US', options);
+});
+
 const Thought = model('Thought', thoughtSchema);
 
 module.exports = Thought;

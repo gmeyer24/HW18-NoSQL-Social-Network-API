@@ -31,4 +31,16 @@ reactionSchema.virtual('formattedCreatedAt').get(function () {
   return this.createdAt.toISOString(); // Format timestamp as ISO string
 });
 
+reactionSchema.virtual('formattedCreatedAt').get(function () {
+  const options = {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  };
+  return this.createdAt.toLocaleString('en-US', options);
+});
+
 module.exports = reactionSchema;

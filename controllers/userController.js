@@ -117,7 +117,8 @@ module.exports = {
         { _id: req.params.userId },
         { $addToSet: { friends: friend } },
         { runValidators: true, new: true }
-      );
+      )
+      .populate('friends');
 
       if (!user) {
         return res

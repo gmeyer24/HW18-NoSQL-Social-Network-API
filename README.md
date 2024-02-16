@@ -152,7 +152,7 @@ This is an example of how to list things you need to use the software and how to
 
 ### Walkthrough Video Link
 
-[![NoSQL Social Network API Walktrhough Video](screen-shot)](link)
+[![NoSQL Social Network API Walktrhough Video](./assets/images/videoscreenshot.png)](https://drive.google.com/file/d/1EcujUDl9pm-7vu2CFI77a48L5h5ORS7j/view)
 
 
 <p align="right">(<a href="#readme-top">Back To Top</a>)</p>
